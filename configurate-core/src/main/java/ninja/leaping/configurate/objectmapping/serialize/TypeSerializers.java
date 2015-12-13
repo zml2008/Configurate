@@ -64,7 +64,7 @@ public class TypeSerializers {
     private static class StringSerializer implements TypeSerializer<String> {
         @Override
         public String deserialize(TypeToken<?> type, ConfigurationNode value) throws InvalidTypeException {
-            return value.getString();
+            return value.getString().get();
         }
 
         @Override
@@ -79,17 +79,17 @@ public class TypeSerializers {
             type = type.wrap();
             Class<?> clazz = type.getRawType();
             if (Integer.class.equals(clazz)) {
-                return value.getInt();
+                return value.getInt().get();
             } else if (Long.class.equals(clazz)) {
-                return value.getLong();
+                return value.getLong().get();
             } else if (Short.class.equals(clazz)) {
-                return (short) value.getInt();
+                return value.getInt().get().shortValue();
             } else if (Byte.class.equals(clazz)) {
-                return (byte) value.getInt();
+                return value.getInt().get().byteValue();
             } else if (Float.class.equals(clazz)) {
-                return value.getFloat();
+                return value.getFloat().get();
             } else if (Double.class.equals(clazz)) {
-                return value.getDouble();
+                return value.getDouble().get();
             }
             return null;
         }
@@ -103,7 +103,7 @@ public class TypeSerializers {
     private static class BooleanSerializer implements TypeSerializer<Boolean> {
         @Override
         public Boolean deserialize(TypeToken<?> type, ConfigurationNode value) throws InvalidTypeException {
-            return value.getBoolean();
+            return value.getBoolean().get();
         }
 
         @Override
@@ -116,7 +116,7 @@ public class TypeSerializers {
 
         @Override
         public Enum deserialize(TypeToken<?> type, ConfigurationNode value) throws ObjectMappingException {
-            String enumConstant = value.getString();
+            String enumConstant = value.getString().get();
             if (enumConstant == null) {
                 throw new ObjectMappingException("No value present in node " + value);
             }
@@ -124,7 +124,7 @@ public class TypeSerializers {
 
             Enum ret;
             try {
-                ret = Enum.valueOf(type.getRawType().asSubclass(Enum.class), value.getString().toUpperCase());
+                ret = Enum.valueOf(type.getRawType().asSubclass(Enum.class), value.getString().get().toUpperCase());
             } catch (IllegalArgumentException e) {
                 throw new ObjectMappingException("Invalid enum constant provided for " + value.getKey() + ": Expected a value of enum " + type + ", got " + enumConstant);
             }
@@ -237,7 +237,7 @@ public class TypeSerializers {
     private static class AnnotatedObjectSerializer implements TypeSerializer<Object> {
         @Override
         public Object deserialize(TypeToken<?> type, ConfigurationNode value) throws ObjectMappingException {
-            Class<?> clazz = getInstantiableType(type, value.getNode("__class__").getString());
+            Class<?> clazz = getInstantiableType(type, value.getNode("__class__").getString().orElse(null));
             return value.getOptions().getObjectMapperFactory().getMapper(clazz).bindToNew().populate(value);
         }
 
@@ -273,7 +273,7 @@ public class TypeSerializers {
     private static class URISerializer implements TypeSerializer<URI> {
         @Override
         public URI deserialize(TypeToken<?> type, ConfigurationNode value) throws ObjectMappingException {
-            String plainUri = value.getString();
+            String plainUri = value.getString().orElse(null);
             if (plainUri == null) {
                 throw new ObjectMappingException("No value present in node " + value);
             }
@@ -299,7 +299,7 @@ public class TypeSerializers {
 
         @Override
         public URL deserialize(TypeToken<?> type, ConfigurationNode value) throws ObjectMappingException {
-            String plainUrl = value.getString();
+            String plainUrl = value.getString().orElse(null);
             if (plainUrl == null) {
                 throw new ObjectMappingException("No value present in node " + value);
             }
@@ -325,7 +325,7 @@ public class TypeSerializers {
         @Override
         public UUID deserialize(TypeToken<?> type, ConfigurationNode value) throws ObjectMappingException {
             try {
-                return UUID.fromString(value.getString());
+                return UUID.fromString(value.getString().get());
             } catch (IllegalArgumentException ex) {
                 throw new ObjectMappingException("Value not a UUID", ex);
             }
@@ -342,7 +342,7 @@ public class TypeSerializers {
         @Override
         public Pattern deserialize(TypeToken<?> type, ConfigurationNode value) throws ObjectMappingException {
             try {
-                return Pattern.compile(value.getString());
+                return Pattern.compile(value.getString().get());
             } catch (PatternSyntaxException ex) {
                 throw new ObjectMappingException(ex);
             }

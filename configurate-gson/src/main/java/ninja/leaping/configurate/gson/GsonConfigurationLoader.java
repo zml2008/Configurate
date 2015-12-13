@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 
 /**
@@ -197,21 +198,24 @@ public class GsonConfigurationLoader extends AbstractConfigurationLoader<Configu
         } else if (node.hasListChildren()) {
             generateArray(generator, node);
         } else {
-            Object value = node.getValue();
-            if (value instanceof Double) {
-                generator.value((Double) value);
-            } else if (value instanceof Float) {
-                generator.value((Float) value);
-            } else if (value instanceof Long) {
-                generator.value((Long) value);
-            } else if (value instanceof Integer) {
-                generator.value((Integer) value);
-            } else if (value instanceof Boolean) {
-                generator.value((Boolean) value);
-            } else if (value instanceof byte[]) {
-                //generator.value((byte[]) value);
-            } else {
-                generator.value(value.toString());
+            Optional<Object> valueOpt = node.getValue();
+            if (valueOpt.isPresent()) {
+                Object value = valueOpt.get();
+                if (value instanceof Double) {
+                    generator.value((Double) value);
+                } else if (value instanceof Float) {
+                    generator.value((Float) value);
+                } else if (value instanceof Long) {
+                    generator.value((Long) value);
+                } else if (value instanceof Integer) {
+                    generator.value((Integer) value);
+                } else if (value instanceof Boolean) {
+                    generator.value((Boolean) value);
+                } else if (value instanceof byte[]) {
+                    //generator.value((byte[]) value);
+                } else {
+                    generator.value(value.toString());
+                }
             }
         }
     }

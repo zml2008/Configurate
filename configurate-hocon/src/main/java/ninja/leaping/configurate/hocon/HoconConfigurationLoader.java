@@ -137,7 +137,7 @@ public class HoconConfigurationLoader extends AbstractConfigurationLoader<Commen
     @Override
     protected void saveInternal(ConfigurationNode node, Writer writer) throws IOException {
         if (!node.hasMapChildren()) {
-            if (node.getValue() == null) {
+            if (!node.getValue().isPresent()) {
                 writer.write(LINE_SEPARATOR);
                 return;
             } else {
@@ -167,7 +167,7 @@ public class HoconConfigurationLoader extends AbstractConfigurationLoader<Commen
             ret = newConfigList(children);
 
         } else {
-            ret = ConfigValueFactory.fromAnyRef(node.getValue(), "configurate-hocon");
+            ret = ConfigValueFactory.fromAnyRef(node.getValue().orElse(null), "configurate-hocon");
         }
         if (node instanceof CommentedConfigurationNode) {
             CommentedConfigurationNode commentedNode = ((CommentedConfigurationNode) node);

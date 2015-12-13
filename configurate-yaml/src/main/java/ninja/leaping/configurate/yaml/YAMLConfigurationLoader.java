@@ -101,7 +101,7 @@ public class YAMLConfigurationLoader extends AbstractConfigurationLoader<Configu
 
     @Override
     protected void saveInternal(ConfigurationNode node, Writer writer) throws IOException {
-        yaml.get().dump(node.getValue(), writer);
+        yaml.get().dump(node.getValue().orElse(null), writer);
     }
 
     @Override

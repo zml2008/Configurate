@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 
 /**
@@ -200,21 +201,24 @@ public class JSONConfigurationLoader extends AbstractConfigurationLoader<Configu
         } else if (node.hasListChildren()) {
             generateArray(generator, node);
         } else {
-            Object value = node.getValue();
-            if (value instanceof Double) {
-                generator.writeNumber((Double) value);
-            } else if (value instanceof Float) {
-                generator.writeNumber((Float) value);
-            } else if (value instanceof Long) {
-                generator.writeNumber((Long) value);
-            } else if (value instanceof Integer) {
-                generator.writeNumber((Integer) value);
-            } else if (value instanceof Boolean) {
-                generator.writeBoolean((Boolean) value);
-            } else if (value instanceof byte[]) {
-                generator.writeBinary((byte[]) value);
-            } else {
-                generator.writeString(value.toString());
+            Optional<Object> valueOpt = node.getValue();
+            if (valueOpt.isPresent()) {
+                Object value = valueOpt.get();
+                if (value instanceof Double) {
+                    generator.writeNumber((Double) value);
+                } else if (value instanceof Float) {
+                    generator.writeNumber((Float) value);
+                } else if (value instanceof Long) {
+                    generator.writeNumber((Long) value);
+                } else if (value instanceof Integer) {
+                    generator.writeNumber((Integer) value);
+                } else if (value instanceof Boolean) {
+                    generator.writeBoolean((Boolean) value);
+                } else if (value instanceof byte[]) {
+                    generator.writeBinary((byte[]) value);
+                } else {
+                    generator.writeString(value.toString());
+                }
             }
         }
     }

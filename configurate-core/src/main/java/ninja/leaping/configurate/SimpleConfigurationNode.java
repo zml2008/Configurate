@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -71,40 +72,14 @@ public class SimpleConfigurationNode implements ConfigurationNode {
     }
 
     @Override
-    public Object getValue(Object def) {
-        Object ret = value.getValue();
-        return ret == null ? calculateDef(def) : ret;
-    }
-
-    @Override
-    public Object getValue(Supplier<Object> defSupplier) {
-        Object ret = value.getValue();
-        return ret == null ? calculateDef(defSupplier.get()) : ret;
+    public Optional<Object> getValue() {
+        return Optional.ofNullable(value.getValue());
     }
 
     // {{{ Typed values
 
     @Override
-    public <T> T getValue(Function<Object, T> transformer, T def) {
-        T ret = transformer.apply(getValue());
-        return ret == null ? calculateDef(def) : ret;
-    }
-
-    @Override
-    public <T> T getValue(Function<Object, T> transformer, Supplier<T> defSupplier) {
-        T ret = transformer.apply(getValue());
-        return ret == null ? calculateDef(defSupplier.get()) : ret;
-    }
-
-    private <T> T calculateDef(T defValue) {
-        if (defValue != null && getOptions().shouldCopyDefaults()) {
-            setValue(defValue);
-        }
-        return defValue;
-    }
-
-    @Override
-    public <T> List<T> getList(Function<Object, T> transformer) {
+    public <T> Optional<List<T>> getList(Function<Object, T> transformer) {
         final ImmutableList.Builder<T> build = ImmutableList.builder();
         ConfigValue value = this.value;
         if (value instanceof ListConfigValue) {
@@ -118,37 +93,21 @@ public class SimpleConfigurationNode implements ConfigurationNode {
             T transformed = transformer.apply(value.getValue());
             if (transformed != null) {
                 build.add(transformed);
+            } else {
+                return Optional.empty();
             }
         }
 
-        return build.build();
+        return Optional.of(build.build());
     }
 
     @Override
-    public <T> List<T> getList(Function<Object, T> transformer, List<T> def) {
-        List<T> ret = getList(transformer);
-        return ret.isEmpty() ? calculateDef(def) : ret;
+    public <T> Optional<List<T>> getList(TypeToken<T> type) throws ObjectMappingException {
+        Optional<List<T>> ret = getValue(new TypeToken<List<T>>() {}
+                .where(new TypeParameter<T>() {}, type));
+        return ret.flatMap(inp -> inp.isEmpty() ? Optional.empty() : ret);
     }
 
-    @Override
-    public <T> List<T> getList(Function<Object, T> transformer, Supplier<List<T>> defSupplier) {
-        List<T> ret = getList(transformer);
-        return ret.isEmpty() ? calculateDef(defSupplier.get()) : ret;
-    }
-
-    @Override
-    public <T> List<T> getList(TypeToken<T> type, List<T> def) throws ObjectMappingException {
-        List<T> ret = getValue(new TypeToken<List<T>>() {}
-                .where(new TypeParameter<T>() {}, type), def);
-        return ret.isEmpty() ? calculateDef(def) : ret;
-    }
-
-    @Override
-    public <T> List<T> getList(TypeToken<T> type, Supplier<List<T>> defSupplier) throws ObjectMappingException {
-        List<T> ret = getValue(new TypeToken<List<T>>() {}
-                .where(new TypeParameter<T>() {}, type), defSupplier);
-        return ret.isEmpty() ? calculateDef(defSupplier.get()) : ret;
-    }
 
     // }}}
 
@@ -204,31 +163,20 @@ public class SimpleConfigurationNode implements ConfigurationNode {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T> T getValue(TypeToken<T> type, T def) throws ObjectMappingException {
+    public <T> Optional<T> getValue(TypeToken<T> type) throws ObjectMappingException {
         Object value = getValue();
         if (value == null) {
-            if (def != null && getOptions().shouldCopyDefaults()) {
-                setValue(type, def);
-            }
-            return def;
+            return  Optional.empty();
         }
         TypeSerializer serial = getOptions().getSerializers().get(type);
         if (serial == null) {
             if (type.getRawType().isInstance(value)) {
-                return (T) type.getRawType().cast(value);
+                return Optional.of((T) type.getRawType().cast(value));
             } else {
-                if (def != null && getOptions().shouldCopyDefaults()) {
-                    setValue(type, def);
-                }
-                return def;
+                return Optional.empty();
             }
         }
         return (T) serial.deserialize(type, this);
-    }
-
-    @Override
-    public <T> T getValue(TypeToken<T> type, Supplier<T> defSupplier) throws ObjectMappingException {
-        return null;
     }
 
     @Override
